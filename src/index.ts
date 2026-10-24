@@ -8,13 +8,13 @@ import {
   createGbpLocalPost,
   loadGbpConfig,
   uploadPhotoToGbp,
-} from './gbp';
+} from './gbp.js';
 import {
   loadFacebookConfig,
   loadInstagramConfig,
   publishFacebookPhoto,
   publishInstagramPhoto,
-} from './social';
+} from './social.js';
 
 /**
  * GeoRank Check-Ins backend stub.
