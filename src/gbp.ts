@@ -106,15 +106,26 @@ export async function uploadPhotoToGbp(
   const resourceName: string | undefined = started?.resourceName;
   if (!resourceName) throw new Error('GBP did not return a resourceName from media:startUpload.');
 
+  // Per Google's documented upload flow, the byte upload is a POST (not a
+  // PUT) to /upload/v1/media/{resourceName}?upload_type=media, and it must
+  // carry the OAuth access token. A PUT here is not routed by Google and
+  // returns 404.
+  const token = await accessToken(cfg);
   const put = await fetch(
     `https://mybusiness.googleapis.com/upload/v1/media/${resourceName}?upload_type=media`,
     {
-      method: 'PUT',
-      headers: { 'Content-Type': image.mimeType },
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': image.mimeType,
+      },
       body: new Uint8Array(image.bytes),
     },
   );
-  if (!put.ok) throw new Error(`GBP byte upload failed (HTTP ${put.status}).`);
+  if (!put.ok) {
+    const detail = await put.text().catch(() => '');
+    throw new Error(`GBP byte upload failed (HTTP ${put.status}): ${detail.slice(0, 500)}`);
+  }
 
   const created = await gbpFetch(cfg, `${parent}/media`, {
     method: 'POST',
